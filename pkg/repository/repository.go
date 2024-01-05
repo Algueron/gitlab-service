@@ -1,29 +1,29 @@
 package repository
 
-import "gitlab-service/cmd/api"
+import "gitlab-service/pkg/openapi"
 
 type GitlabRepo interface {
 	// Connect to Gitlab
 	Connect(url string, token string) error
 
 	// Retrieve the list of available groups
-	GetAllGroups() ([]*api.Group, error)
+	GetAllGroups() ([]*openapi.Group, error)
 
 	// Retrieve the list of subgroups of a group
-	GetGroupSubgroups(groupId int32) ([]*api.Group, error)
+	GetGroupSubgroups(groupId int32) ([]*openapi.Group, error)
 
 	// Retrieve the list of projects of a group
-	GetGroupProjects(groupId int32) ([]*api.Project, error)
+	GetGroupProjects(groupId int32) ([]*openapi.Project, error)
 
 	// Retrieve the list of projects
-	GetProjects() ([]*api.Project, error)
+	GetProjects() ([]*openapi.Project, error)
 
 	// Create a new project
-	CreateProject(*api.Project) error
+	CreateProject(*openapi.Project) error
 
 	// Delete a single project
 	DeleteProject(projectId int32) error
 
 	// Retrieve a single project
-	GetProject(projectId int32) (*api.Project, error)
+	GetProject(projectId int32) (*openapi.Project, error)
 }
