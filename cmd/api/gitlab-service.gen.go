@@ -4,12 +4,42 @@
 package api
 
 import (
+	"bytes"
+	"compress/gzip"
+	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path"
+	"strings"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/gorilla/mux"
 	"github.com/oapi-codegen/runtime"
 )
+
+// Group defines model for Group.
+type Group struct {
+	FullPath *string `json:"full_path,omitempty"`
+	Id       *int32  `json:"id,omitempty"`
+	Name     *string `json:"name,omitempty"`
+	Path     *string `json:"path,omitempty"`
+}
+
+// Project defines model for Project.
+type Project struct {
+	DefaultBranch *string `json:"default_branch,omitempty"`
+	GroupId       *int32  `json:"group_id,omitempty"`
+	HttpUrlToRepo *string `json:"http_url_to_repo,omitempty"`
+	Id            *int32  `json:"id,omitempty"`
+	Name          *string `json:"name,omitempty"`
+}
+
+// CreateProjectJSONRequestBody defines body for CreateProject for application/json ContentType.
+type CreateProjectJSONRequestBody = Project
+
+// CreateProjectFormdataRequestBody defines body for CreateProject for application/x-www-form-urlencoded ContentType.
+type CreateProjectFormdataRequestBody = Project
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -53,8 +83,8 @@ func (siw *ServerInterfaceWrapper) GetAllGroups(w http.ResponseWriter, r *http.R
 		siw.Handler.GetAllGroups(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -79,8 +109,8 @@ func (siw *ServerInterfaceWrapper) GetGroupSubgroups(w http.ResponseWriter, r *h
 		siw.Handler.GetGroupSubgroups(w, r, groupId)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -105,8 +135,8 @@ func (siw *ServerInterfaceWrapper) GetGroupProjects(w http.ResponseWriter, r *ht
 		siw.Handler.GetGroupProjects(w, r, groupId)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -120,8 +150,8 @@ func (siw *ServerInterfaceWrapper) GetProjects(w http.ResponseWriter, r *http.Re
 		siw.Handler.GetProjects(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -135,8 +165,8 @@ func (siw *ServerInterfaceWrapper) CreateProject(w http.ResponseWriter, r *http.
 		siw.Handler.CreateProject(w, r)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -161,8 +191,8 @@ func (siw *ServerInterfaceWrapper) DeleteProject(w http.ResponseWriter, r *http.
 		siw.Handler.DeleteProject(w, r, projectId)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -187,8 +217,8 @@ func (siw *ServerInterfaceWrapper) GetProject(w http.ResponseWriter, r *http.Req
 		siw.Handler.GetProject(w, r, projectId)
 	}))
 
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
 	}
 
 	handler.ServeHTTP(w, r.WithContext(ctx))
@@ -322,4 +352,99 @@ func HandlerWithOptions(si ServerInterface, options GorillaServerOptions) http.H
 	r.HandleFunc(options.BaseURL+"/project/{projectId}", wrapper.GetProject).Methods("GET")
 
 	return r
+}
+
+// Base64 encoded, gzipped, json marshaled Swagger object
+var swaggerSpec = []string{
+
+	"H4sIAAAAAAAC/+RYTW/jNhD9KwTboyI5X23hU9PNYmGgLYJNb0Vg0NJYZkCRLDmyYwT678VQH1ZkOes0",
+	"u91d5BRFnJk3M+9xSOuRp6awRoNGz6eP3KcrKER4/OBMaenBOmPBoYTwelkqNbcCV/QPPIjCKlr4my+N",
+	"SRbC8buI49YCn3KPTuqcVxGX2cD69Oz84vIu4kvjCoF8yqXG8zPeuUqNkIMjXy0KGGIV2zxkN4Y1ltt4",
+	"XlX3xizuIUUe8YdCkW+NyWsQsrtxJljstSODpSgVzhdO6HQPtxBS84gXwiOMdyZAzF/TnxWinZdOzdHM",
+	"HVgzzIHWp0mSS1RiETcrcWqKpOliUmxtXV6cSzyOv4vLn37+5TX8NYj/hZXWtarIVuplKDk1GkXNEBRC",
+	"Kj7l96WSoGMrrFTK6F9zek+VU1oZ+NRJi9JoPuV/raRnHtxapsCkZ6WHjC22DFfADK7AtYuemSW7KZX/",
+	"yKwSSPUzNIzqdSJFtpG4YkIzqT0KnQKZf6hbzyOuZAraQ6+YKyvSFbCzeMIjXjpKuyFss9nEIqzGxuVJ",
+	"4+qT32fv3v95+/7kLJ7EKywUFYMSFUWrkdhtnSuP+BqcryucxJP4lGyNBS2s5FN+Hp8GWNoxQcxJ3u75",
+	"HLBWd79JHwGdhDWErijpkYoTayGVWChgwdmzpXHBoG5Skwq7SlNTaiKTdo+giLOMMga8UirMGs8j7sBb",
+	"Q2US+tlk0jILOuQjrFUyDd7Jvaek2pFFTxKhCI4/OljyKf8h2Q23pJlsST3WdiITzoltUF0/eKO4zxR7",
+	"T26+TFPwflkq1rUj5ODLohBue2yzacOJPGypZiBSkJrG5DH8mWVV4stFY/8iaju3AF1DjhEYyr7tMEhQ",
+	"ThSA4CizIdTsmsIRjhUONHZxJa2G6R09GcCzLAjjn1I6yPgUXQlRj5lPjqDq7o3rKuIXdcUDIvRaKJmx",
+	"2TXzJeUIWW17sW8bMmDaIFuaUmfHaPWAeg7q1fcE24z4F+q19TpGrjctwttUa3uf+TJ6PRz9m1bsuH7G",
+	"BGt318GXy3NMkz05vnnyjyeqx053n6RfAMaPcPLOgUBggmnYtBHomiYzoAsbPEiPUucH5kbt3dZW73Dw",
+	"+JvJti8i6KjODXk42Ww2JzQ5TkqnQKcmg+wzhB3Se1yQPRafNhaoqYEtj8bB3jCsXqnwr1np7cFhdXl4",
+	"WEltSxyoekyLo2LuDZvksXmYZVWNpgBhH/c6vGeCealzBb3wTxVd2+0Ufewx2DmMnIBdhl/mDPyfjo6m",
+	"JwcPj8MdHptGzx8Qn6Rpdzh8Hxx9Fxv5q0nnOd5Hdn/VvR0C/SG0yKH5tLD7Nfj0w1X0vFfvGB1+Wrmr",
+	"/g0AAP//UcU94BoUAAA=",
+}
+
+// GetSwagger returns the content of the embedded swagger specification file
+// or error if failed to decode
+func decodeSpec() ([]byte, error) {
+	zipped, err := base64.StdEncoding.DecodeString(strings.Join(swaggerSpec, ""))
+	if err != nil {
+		return nil, fmt.Errorf("error base64 decoding spec: %w", err)
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(zipped))
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing spec: %w", err)
+	}
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(zr)
+	if err != nil {
+		return nil, fmt.Errorf("error decompressing spec: %w", err)
+	}
+
+	return buf.Bytes(), nil
+}
+
+var rawSpec = decodeSpecCached()
+
+// a naive cached of a decoded swagger spec
+func decodeSpecCached() func() ([]byte, error) {
+	data, err := decodeSpec()
+	return func() ([]byte, error) {
+		return data, err
+	}
+}
+
+// Constructs a synthetic filesystem for resolving external references when loading openapi specifications.
+func PathToRawSpec(pathToFile string) map[string]func() ([]byte, error) {
+	res := make(map[string]func() ([]byte, error))
+	if len(pathToFile) > 0 {
+		res[pathToFile] = rawSpec
+	}
+
+	return res
+}
+
+// GetSwagger returns the Swagger specification corresponding to the generated code
+// in this file. The external references of Swagger specification are resolved.
+// The logic of resolving external references is tightly connected to "import-mapping" feature.
+// Externally referenced files must be embedded in the corresponding golang packages.
+// Urls can be supported but this task was out of the scope.
+func GetSwagger() (swagger *openapi3.T, err error) {
+	resolvePath := PathToRawSpec("")
+
+	loader := openapi3.NewLoader()
+	loader.IsExternalRefsAllowed = true
+	loader.ReadFromURIFunc = func(loader *openapi3.Loader, url *url.URL) ([]byte, error) {
+		pathToFile := url.String()
+		pathToFile = path.Clean(pathToFile)
+		getSpec, ok := resolvePath[pathToFile]
+		if !ok {
+			err1 := fmt.Errorf("path not found: %s", pathToFile)
+			return nil, err1
+		}
+		return getSpec()
+	}
+	var specData []byte
+	specData, err = rawSpec()
+	if err != nil {
+		return
+	}
+	swagger, err = loader.LoadFromData(specData)
+	if err != nil {
+		return
+	}
+	return
 }
