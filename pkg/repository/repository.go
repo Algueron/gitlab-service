@@ -19,7 +19,7 @@ type GitlabRepo interface {
 	GetProjects() ([]*openapi.Project, error)
 
 	// Create a new project
-	CreateProject(*openapi.Project) error
+	CreateProject(*openapi.Project) (int, error)
 
 	// Delete a single project
 	DeleteProject(projectId int32) error
