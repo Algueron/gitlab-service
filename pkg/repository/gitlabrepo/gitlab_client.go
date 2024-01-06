@@ -39,7 +39,7 @@ func (g *GitlabClientRepo) GetProjects() ([]*openapi.Project, error) {
 }
 
 // Create a new project
-func (g *GitlabClientRepo) CreateProject(*openapi.Project) (int, error) {
+func (g *GitlabClientRepo) CreateProject(*openapi.Project) (int32, error) {
 	return -1, errors.New("Unimplemented")
 }
 

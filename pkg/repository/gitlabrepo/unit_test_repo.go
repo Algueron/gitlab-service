@@ -103,7 +103,7 @@ func (u *UnitTestRepo) GetProjects() ([]*openapi.Project, error) {
 }
 
 // Create a new project
-func (u *UnitTestRepo) CreateProject(p *openapi.Project) (int, error) {
+func (u *UnitTestRepo) CreateProject(p *openapi.Project) (int32, error) {
 	// Check if the group exist
 	idx := slices.IndexFunc(u.groups, func(g *openapi.Group) bool { return *g.Id == *p.GroupId })
 	if idx == -1 {
@@ -118,7 +118,7 @@ func (u *UnitTestRepo) CreateProject(p *openapi.Project) (int, error) {
 	// Adds the project to the fake list
 	u.projects = append(u.projects, p)
 
-	return int(*p.Id), nil
+	return *p.Id, nil
 }
 
 // Delete a single project
