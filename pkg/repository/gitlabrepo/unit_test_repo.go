@@ -62,7 +62,7 @@ func (u *UnitTestRepo) GetAllGroups() ([]*openapi.Group, error) {
 // Retrieve the list of subgroups of a group
 func (u *UnitTestRepo) GetGroupSubgroups(groupId int32) ([]*openapi.Group, error) {
 	// Check if the group exists
-	idx := slices.IndexFunc(u.groups, func(g *openapi.Group) bool { return g.Id == &groupId })
+	idx := slices.IndexFunc(u.groups, func(g *openapi.Group) bool { return *g.Id == groupId })
 	if idx == -1 {
 		return nil, errors.New("group does not exist")
 	}
@@ -70,7 +70,7 @@ func (u *UnitTestRepo) GetGroupSubgroups(groupId int32) ([]*openapi.Group, error
 	// Return the groups with a starting full path
 	var subgroups []*openapi.Group
 	for _, e := range u.groups {
-		if strings.HasPrefix(*e.FullPath, *u.groups[idx].FullPath) {
+		if (*e.Id != groupId) && strings.HasPrefix(*e.FullPath, *u.groups[idx].FullPath) {
 			subgroups = append(subgroups, e)
 		}
 	}
