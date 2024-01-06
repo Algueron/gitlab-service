@@ -12,11 +12,12 @@ type UnitTestRepo struct {
 	projects []*openapi.Project
 }
 
+// Utilities functions
+func stradr(s string) *string { return &s }
+func int32adr(i int32) *int32 { return &i }
+
 // Connect to Gitlab
 func (u *UnitTestRepo) Connect(url string, token string) error {
-	// Utilities functions
-	stradr := func(s string) *string { return &s }
-	int32adr := func(i int32) *int32 { return &i }
 
 	// For unit testing, initialize fake data
 	if len(u.groups) == 0 {
@@ -37,10 +38,10 @@ func (u *UnitTestRepo) Connect(url string, token string) error {
 		// Create two projects
 		u.projects = append(u.projects, &openapi.Project{
 			Id:            int32adr(1),
-			GroupId:       int32adr(1),
+			GroupId:       int32adr(2),
 			DefaultBranch: stradr("main"),
 			Name:          stradr("project1"),
-			HttpUrlToRepo: stradr("https://gitlab.example.com/foo/project1.git"),
+			HttpUrlToRepo: stradr("https://gitlab.example.com/foo/bar/project1.git"),
 		})
 		u.projects = append(u.projects, &openapi.Project{
 			Id:            int32adr(2),
