@@ -1,4 +1,4 @@
-package: api
+package: openapi
 generate:
   gorilla-server: true
   models: true
