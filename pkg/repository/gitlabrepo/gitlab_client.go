@@ -1,6 +1,7 @@
 package gitlabrepo
 
 import (
+	"fmt"
 	"gitlab-service/pkg/openapi"
 	"log"
 	"strings"
@@ -53,8 +54,7 @@ func (g *GitlabClientRepo) GetAllGroups() ([]*openapi.Group, error) {
 		TopLevelOnly: gitlab.Ptr(true),
 	})
 	if err != nil {
-		log.Fatalf("error while retrieving groups: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error while retrieving groups: %v", err)
 	}
 	nbTotalPages := resp.TotalPages
 
@@ -67,8 +67,7 @@ func (g *GitlabClientRepo) GetAllGroups() ([]*openapi.Group, error) {
 			},
 		})
 		if err != nil {
-			log.Fatalf("error while retrieving groups: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("error while retrieving groups: %v", err)
 		}
 		for _, e := range groups {
 			retrievedGroups = append(retrievedGroups, &openapi.Group{
@@ -88,8 +87,7 @@ func (g *GitlabClientRepo) GetGroupSubgroups(groupId int32) ([]*openapi.Group, e
 	// Make a first call to calculate the number of pages
 	_, resp, err := g.client.Groups.ListSubGroups(int(groupId), &gitlab.ListSubGroupsOptions{})
 	if err != nil {
-		log.Fatalf("error while retrieving subgroups: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error while retrieving subgroups: %v", err)
 	}
 	nbTotalPages := resp.TotalPages
 
@@ -101,8 +99,7 @@ func (g *GitlabClientRepo) GetGroupSubgroups(groupId int32) ([]*openapi.Group, e
 			},
 		})
 		if err != nil {
-			log.Fatalf("error while retrieving subgroups: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("error while retrieving subgroups: %v", err)
 		}
 		for _, e := range groups {
 			retrievedGroups = append(retrievedGroups, &openapi.Group{
@@ -121,8 +118,7 @@ func (g *GitlabClientRepo) GetGroupProjects(groupId int32) ([]*openapi.Project, 
 	// Make a first call to calculate the number of pages
 	_, resp, err := g.client.Groups.ListGroupProjects(int(groupId), &gitlab.ListGroupProjectsOptions{})
 	if err != nil {
-		log.Fatalf("error while retrieving group's projects: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error while retrieving group's projects: %v", err)
 	}
 	nbTotalPages := resp.TotalPages
 
@@ -134,8 +130,7 @@ func (g *GitlabClientRepo) GetGroupProjects(groupId int32) ([]*openapi.Project, 
 			},
 		})
 		if err != nil {
-			log.Fatalf("error while retrieving group's projects: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("error while retrieving group's projects: %v", err)
 		}
 		for _, e := range projects {
 			retrievedProjects = append(retrievedProjects, &openapi.Project{
@@ -155,8 +150,7 @@ func (g *GitlabClientRepo) GetProjects() ([]*openapi.Project, error) {
 	// Make a first call to calculate the number of pages
 	_, resp, err := g.client.Projects.ListProjects(&gitlab.ListProjectsOptions{})
 	if err != nil {
-		log.Fatalf("error while retrieving projects: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("error while retrieving projects: %v", err)
 	}
 	nbTotalPages := resp.TotalPages
 
@@ -168,8 +162,7 @@ func (g *GitlabClientRepo) GetProjects() ([]*openapi.Project, error) {
 			},
 		})
 		if err != nil {
-			log.Fatalf("error while retrieving projects: %v", err)
-			return nil, err
+			return nil, fmt.Errorf("error while retrieving projects: %v", err)
 		}
 		for _, e := range projects {
 			retrievedProjects = append(retrievedProjects, &openapi.Project{
@@ -191,8 +184,7 @@ func (g *GitlabClientRepo) CreateProject(p *openapi.Project) (int32, error) {
 		Name:        p.Name,
 	})
 	if err != nil {
-		log.Fatalf("error while creationg project %s: %v", *p.Name, err)
-		return -1, err
+		return -1, fmt.Errorf("error while creationg project %s: %v", *p.Name, err)
 	}
 
 	return int32(gp.ID), nil
@@ -202,8 +194,7 @@ func (g *GitlabClientRepo) CreateProject(p *openapi.Project) (int32, error) {
 func (g *GitlabClientRepo) DeleteProject(projectId int32) error {
 	_, err := g.client.Projects.DeleteProject(int(projectId))
 	if err != nil {
-		log.Fatalf("error while deleting project %d: %v", projectId, err)
-		return err
+		return fmt.Errorf("error while deleting project %d: %v", projectId, err)
 	}
 
 	return nil
@@ -213,8 +204,7 @@ func (g *GitlabClientRepo) DeleteProject(projectId int32) error {
 func (g *GitlabClientRepo) GetProject(projectId int32) (*openapi.Project, error) {
 	p, _, err := g.client.Projects.GetProject(int(projectId), &gitlab.GetProjectOptions{})
 	if err != nil {
-		log.Fatalf("error while getting project %d: %v", projectId, err)
-		return nil, err
+		return nil, fmt.Errorf("error while getting project %d: %v", projectId, err)
 	}
 
 	project := openapi.Project{
