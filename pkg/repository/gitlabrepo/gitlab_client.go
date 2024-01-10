@@ -32,15 +32,13 @@ func (g *GitlabClientRepo) Connect(url string, token string) error {
 	// Create the client
 	git, err := gitlab.NewClient(g.gitlab_token, gitlab.WithBaseURL(g.gitlab_url))
 	if err != nil {
-		log.Fatalf("failed to create client: %v", err)
-		return err
+		return fmt.Errorf("failed to create client: %v", err)
 	}
 
 	// Perform a sanity check by calling the metadata API
 	meta, _, err := git.Metadata.GetMetadata()
 	if err != nil {
-		log.Fatalf("failed to retrieve Gitlab metadata: %v", err)
-		return err
+		return fmt.Errorf("failed to retrieve Gitlab metadata: %v", err)
 	}
 	log.Println("successfully connect to Gitlab, version is ", meta.Version)
 	g.client = git
