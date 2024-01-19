@@ -18,8 +18,16 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-var unitTestRepo repository.GitlabRepo
-var gitlabTestRepo repository.GitlabRepo
+var (
+	unitTestRepo      repository.GitlabRepo
+	gitlabTestRepo    repository.GitlabRepo
+	gitlabTestUrl     string
+	gitlabTestToken   string
+	fooGroupId        int
+	barGroupId        int
+	project1ProjectId int
+	project2ProjectId int
+)
 
 type gitlabContainer struct {
 	testcontainers.Container
@@ -96,15 +104,13 @@ func CreateRootToken(gitlabURL string, rootPassword string) (string, error) {
 	// Create the Gitlab Client
 	gitlabClient, err := gitlab.NewBasicAuthClient("root", rootPassword, gitlab.WithBaseURL(gitlabURL))
 	if err != nil {
-		log.Println("Error while creating Gitlab client: ", err)
-		return "", err
+		return "", fmt.Errorf("Error while creating Gitlab client: %v", err)
 	}
 
 	// Get the root user ID
 	u, _, err := gitlabClient.Users.CurrentUser()
 	if err != nil {
-		log.Println("Error while getting current user: ", err)
-		return "", err
+		return "", fmt.Errorf("Error while getting current user: %v", err)
 	}
 
 	// Create the personal access token
@@ -113,11 +119,61 @@ func CreateRootToken(gitlabURL string, rootPassword string) (string, error) {
 		Scopes: gitlab.Ptr([]string{"api"}),
 	})
 	if err != nil {
-		log.Println("Error while creating personal access token: ", err)
-		return "", err
+		return "", fmt.Errorf("Error while creating personal access token: %v", err)
 	}
 
 	return t.Token, nil
+}
+
+func CreateGitlabTestDataset(gitlabURL string, gitlabToken string) error {
+	// Create the Gitlab client
+	gitlabClient, err := gitlab.NewClient(gitlabToken, gitlab.WithBaseURL(gitlabURL))
+	if err != nil {
+		return fmt.Errorf("Error while creating Gitlab client: %v", err)
+	}
+
+	// Create the first group
+	foo, _, err := gitlabClient.Groups.CreateGroup(&gitlab.CreateGroupOptions{
+		Name: gitlab.Ptr("foo"),
+		Path: gitlab.Ptr("foo"),
+	})
+	if err != nil {
+		return fmt.Errorf("Error while creating foo group: %v", err)
+	}
+	fooGroupId = foo.ID
+
+	// Create the second group
+	bar, _, err := gitlabClient.Groups.CreateGroup(&gitlab.CreateGroupOptions{
+		ParentID: gitlab.Ptr(foo.ID),
+		Name:     gitlab.Ptr("bar"),
+		Path:     gitlab.Ptr("bar"),
+	})
+	if err != nil {
+		return fmt.Errorf("Error while creating foo/bar group: %v", err)
+	}
+	barGroupId = bar.ID
+
+	// Create the first project
+	proj1, _, err := gitlabClient.Projects.CreateProject(&gitlab.CreateProjectOptions{
+		Name:        gitlab.Ptr("project1"),
+		NamespaceID: gitlab.Ptr(bar.ID),
+	})
+	if err != nil {
+		return fmt.Errorf("Error while creating first project: %v", err)
+	}
+	project1ProjectId = proj1.ID
+
+	// Create the second project
+	proj2, _, err := gitlabClient.Projects.CreateProject(&gitlab.CreateProjectOptions{
+		Name:        gitlab.Ptr("project2"),
+		NamespaceID: gitlab.Ptr(bar.ID),
+	})
+	if err != nil {
+		return fmt.Errorf("Error while creating second project: %v", err)
+	}
+	project2ProjectId = proj2.ID
+
+	return nil
 }
 
 func TestMain(m *testing.M) {
@@ -148,7 +204,8 @@ func TestMain(m *testing.M) {
 		}()
 
 		// Try to get the Home page
-		log.Println("Container available at:", gitlabContainer.URI)
+		gitlabTestUrl = gitlabContainer.URI
+		log.Println("Container available at:", gitlabTestUrl)
 		resp, _ := http.Get(gitlabContainer.URI)
 		if resp.StatusCode != http.StatusOK {
 			log.Fatalf("Expected status code %d. Got %d.", http.StatusOK, resp.StatusCode)
@@ -162,14 +219,19 @@ func TestMain(m *testing.M) {
 		log.Println("Root password is ", rootPassword)
 
 		// Create a personal access token for root
-		token, err := CreateRootToken(gitlabContainer.URI, rootPassword)
+		gitlabTestToken, err = CreateRootToken(gitlabContainer.URI, rootPassword)
 		if err != nil {
 			log.Fatalf("Error while creating root token: %v", err)
 		}
 
+		// Create the fake groups
+		err = CreateGitlabTestDataset(gitlabTestUrl, gitlabTestToken)
+		if err != nil {
+			log.Fatalf("Error while creating Gitlab test dataset token: %v", err)
+		}
+
 		// Initialize the Gitlab Repository
 		gitlabTestRepo = &GitlabClientRepo{}
-		gitlabTestRepo.Connect(gitlabContainer.URI, token)
 	}
 
 	// Run the tests
