@@ -46,9 +46,9 @@ func TestGitlabClientRepoGetAllGroups(t *testing.T) {
 		t.Errorf("error is not nil: %v", err)
 	}
 
-	// We shoud have two groups
-	if len(groups) != 2 {
-		t.Errorf("not having 2 groups: %d", len(groups))
+	// We shoud have one top level group
+	if len(groups) != 1 {
+		t.Errorf("not having 1 group: %d", len(groups))
 	}
 }
 
