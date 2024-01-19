@@ -49,7 +49,7 @@ func (g *GitlabClientRepo) Connect(url string, token string) error {
 func (g *GitlabClientRepo) GetAllGroups() ([]*openapi.Group, error) {
 	// Make a first call to calculate the number of pages
 	_, resp, err := g.client.Groups.ListGroups(&gitlab.ListGroupsOptions{
-		TopLevelOnly: gitlab.Ptr(true),
+		TopLevelOnly: gitlab.Ptr(false),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error while retrieving groups: %v", err)
