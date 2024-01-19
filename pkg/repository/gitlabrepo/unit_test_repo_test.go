@@ -90,7 +90,7 @@ func TestUnitTestRepoGetGroupProjects(t *testing.T) {
 }
 
 func TestUnitTestRepoGetProjects(t *testing.T) {
-	// Get the groups
+	// Get the projects
 	projects, err := unitTestRepo.GetProjects()
 
 	// The error should always be returned nil
@@ -98,7 +98,7 @@ func TestUnitTestRepoGetProjects(t *testing.T) {
 		t.Errorf("error is not nil: %v", err)
 	}
 
-	// We shoud have two groups
+	// We shoud have two projects
 	if len(projects) == 0 {
 		t.Errorf("no project")
 	}
