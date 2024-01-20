@@ -50,9 +50,11 @@ pipeline {
 		stage("Docker Publish") {
 			steps {
 				echo 'DOCKER PUBLISH'
-				docker.withRegistry('http://'+registry, registryCredentials) {
-                	dockerImage.push('latest')
-          		}
+				script {
+					docker.withRegistry('http://'+registry, registryCredentials) {
+						dockerImage.push('latest')
+					}
+				}
 			}
 		}
 		stage("Deploy") {
