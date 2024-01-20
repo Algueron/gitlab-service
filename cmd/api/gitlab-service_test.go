@@ -1,10 +1,16 @@
 package api
 
 import (
+	"fmt"
+	"gitlab-service/pkg/openapi"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
+
+	"github.com/gorilla/mux"
+	middleware "github.com/oapi-codegen/nethttp-middleware"
 )
 
 func TestGitlabServiceHandlers(t *testing.T) {
@@ -13,18 +19,78 @@ func TestGitlabServiceHandlers(t *testing.T) {
 		method         string
 		url            string
 		jsonBody       string
-		handler        http.HandlerFunc
 		expectedStatus int
 	}{
 		{
 			name:           "GetAllGroups",
 			method:         "GET",
-			url:            "/groups",
+			url:            "/group",
 			jsonBody:       "",
-			handler:        app.GetAllGroups,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "GetGroupSubgroups - invalid group",
+			method:         "GET",
+			url:            "/group/777777/subgroups",
+			jsonBody:       "",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "GetGroupSubgroups - empty group",
+			method:         "GET",
+			url:            "/group/2/subgroups",
+			jsonBody:       "",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "GetGroupSubgroups",
+			method:         "GET",
+			url:            "/group/1/subgroups",
+			jsonBody:       "",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "GetGroupProjects - invalid group",
+			method:         "GET",
+			url:            "/groups/777777/projects",
+			jsonBody:       "",
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "GetGroupSubgroups - empty group",
+			method:         "GET",
+			url:            "/groups/2/projects",
+			jsonBody:       "",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "GetGroupSubgroups",
+			method:         "GET",
+			url:            "/groups/1/projects",
+			jsonBody:       "",
 			expectedStatus: http.StatusOK,
 		},
 	}
+
+	swagger, err := openapi.GetSwagger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading swagger spec\n: %s", err)
+		os.Exit(1)
+	}
+
+	// Clear out the servers array in the swagger spec, that skips validating
+	// that server names match. We don't know how this thing will be run.
+	swagger.Servers = nil
+
+	// Create the handler
+	router := mux.NewRouter()
+
+	// Use our validation middleware to check all requests against the
+	// OpenAPI schema.
+	router.Use(middleware.OapiRequestValidator(swagger))
+
+	// We now register our petStore above as the handler for the interface
+	openapi.HandlerFromMux(&app, router)
 
 	for _, test := range tests {
 
@@ -39,11 +105,8 @@ func TestGitlabServiceHandlers(t *testing.T) {
 		// Create the recorder
 		rr := httptest.NewRecorder()
 
-		// Create the handler
-		handler := http.HandlerFunc(test.handler)
-
 		// Server the request
-		handler.ServeHTTP(rr, req)
+		router.ServeHTTP(rr, req)
 
 		// Check the returned code
 		if rr.Code != test.expectedStatus {
