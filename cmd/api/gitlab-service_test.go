@@ -85,6 +85,13 @@ func TestGitlabServiceHandlers(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
+			name:           "CreateProject - malformed body",
+			method:         "POST",
+			url:            "/project",
+			jsonBody:       `{"group_id":777777,"name:"project3"}`,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
 			name:           "CreateProject",
 			method:         "POST",
 			url:            "/project",
