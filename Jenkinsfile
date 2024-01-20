@@ -5,6 +5,13 @@ pipeline {
 		go 'go-1.21' 
 	}
 
+	environment {
+		imageName = "pulsr-gitlab-service"
+		registryCredentials = "adminnexus"
+        registry = "docker.algueron.io"
+        dockerImage = ''
+	}
+
 	stages {
 		stage("Compile") {
 			steps{
@@ -35,11 +42,17 @@ pipeline {
 		stage("Docker build") {
 			steps {
 				echo 'DOCKER BUILD'
+				script {
+          			dockerImage = docker.build imageName
+        		}
 			}
 		}
 		stage("Docker Publish") {
 			steps {
 				echo 'DOCKER PUBLISH'
+				docker.withRegistry('http://'+registry, registryCredentials) {
+                	dockerImage.push('latest')
+          		}
 			}
 		}
 		stage("Deploy") {
