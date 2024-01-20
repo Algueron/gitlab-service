@@ -9,7 +9,7 @@ WORKDIR /app
 
 RUN CGO_ENABLED=0 go build -o gitlabServiceApp ./cmd
 
-RUN chmod +x /app/brokerApp
+RUN chmod +x /app/gitlabServiceApp
 
 # build a tiny docker image
 FROM alpine:latest
